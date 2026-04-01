@@ -1,34 +1,32 @@
 #include <stdbool.h>
-#include <unistd.h>
 #include <termios.h>
+#include <unistd.h>
 #include <stdio.h>
-
 
 #define out printf
 #define CLEAR_CONSOLE out("\033[2J\033[H");
-#define CLEAR_INPUT CLEAR_CONSOLE; int c; while ((c = getchar()) != '\n' && c != EOF); renderPlayfield(cells, player, winCheck);
+#define CLEAR_INPUT CLEAR_CONSOLE; int c; while ((c = getchar()) != '\n' && c != EOF); renderPlayfield();
 
 typedef unsigned short int usint;
 
-void renderPlayfield(char *cells, char player, bool winCheck);
-void playerMove(char *cells, char player, bool winCheck);
-bool victoryCheck(char *cells, char player, bool winCheck);
-char getch(void);
+usint winsO = 0;
+usint winsX = 0;
 
 bool standoff = false;
+bool winCheck = false;
+
+char player = 'O';
+char cells[] = {'1', '2', '3',
+       			'4', '5', '6',
+           		'7', '8', '9'};
+
+void renderPlayfield(void);
+void playerMove(void);
+void victoryCheck(void);
+char getch(void);
+
 
 int main(void) {
-	char player = 'O';
-	bool winCheck = false;
-
-	usint winsO = 0;
-	usint winsX = 0;
-
-    char cells[] = {
-        '1', '2', '3',
-        '4', '5', '6',
-        '7', '8', '9'};
-
     out("\033[?25l");
 
     while (true) {
@@ -36,11 +34,9 @@ int main(void) {
      	player = (player == 'X') ? 'O' : 'X';
 
       	if (winCheck != true && standoff != true) {
-      		renderPlayfield(cells, player, winCheck);
-       		playerMove(cells, player, winCheck);
-        	winCheck = victoryCheck(cells, player, winCheck);
+      		renderPlayfield(); playerMove(); victoryCheck();
        } else if (winCheck == true && standoff != true) {
-       		renderPlayfield(cells, player, winCheck);
+       		renderPlayfield();
        	 	printf("\n\n\n       Игрок ");
           	switch (player) {
            		case 'X': printf("\033[32mO\033[0m"); break;
@@ -51,7 +47,7 @@ int main(void) {
             for (int i = 0; i < 9; i++) { cells[i] = i + 1 + '0'; }
             winCheck = false;
        } else if (standoff == true && winCheck != true) {
-       		renderPlayfield(cells, player, winCheck);
+       		renderPlayfield();
      	 	printf("\n\n\n\t    Ничья");
         	while (1) { char c; c = getch(); if (c == ' ') { break; } }
           	for (int i = 0; i < 9; i++) { cells[i] = i + 1 + '0'; }
@@ -63,19 +59,15 @@ int main(void) {
 }
 
 
-void renderPlayfield(char *cells, char player, bool winCheck) {
+void renderPlayfield(void) {
     out("\n\n     \033[1m\033[31mX\033[0m\033[1m КРЕСТИКИ-НОЛИКИ \033[32mO\033[0m\033[0m\n\n");
 
     for (int i = 0; i < 9; i++) {
         if ((i % 3) == 0) { out("\n\t "); }
 
-        if (cells[i] == 'X') {
-        	out("\033[31m  X\033[0m");
-        } else if (cells[i] == 'O') {
-        	out("\033[32m  O\033[0m");
-        } else {
-        	out("  %c", cells[i]);
-        }
+        if (cells[i] == 'X') { out("\033[31m  X\033[0m");
+        } else if (cells[i] == 'O') { out("\033[32m  O\033[0m");
+        } else { out("  %c", cells[i]); }
     }
 
     if (winCheck != true && standoff != true) {
@@ -85,7 +77,7 @@ void renderPlayfield(char *cells, char player, bool winCheck) {
 }
 
 
-void playerMove(char *cells, char player, bool winCheck) {
+void playerMove(void) {
 	usint cellNumber;
 
 	while (true) {
@@ -102,7 +94,7 @@ void playerMove(char *cells, char player, bool winCheck) {
 }
 
 
-bool victoryCheck(char *cells, char player, bool winCheck) {
+void victoryCheck(void) {
 	if (cells[0] == 'X' && cells[1] == 'X' && cells[2] == 'X') { winCheck = true; }
 	if (cells[3] == 'X' && cells[4] == 'X' && cells[5] == 'X') { winCheck = true; }
 	if (cells[6] == 'X' && cells[7] == 'X' && cells[8] == 'X') { winCheck = true; }
@@ -128,19 +120,12 @@ bool victoryCheck(char *cells, char player, bool winCheck) {
 	usint counter = 0;
 	for (int i = 0; i < 9; i++) { if (cells[i] == 'X' || cells[i] == 'O') { counter++; } }
  	if (counter == 9 && winCheck != true) { standoff = true; }
-
-	return winCheck;
 }
 
 
 char getch(void) {
-    struct termios oldt, newt;
-    char ch;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    ch = getchar();
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    return ch;
+    struct termios oldt, newt; char ch;
+    tcgetattr(STDIN_FILENO, &oldt); newt = oldt; newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt); ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt); return ch;
 }
