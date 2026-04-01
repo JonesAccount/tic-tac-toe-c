@@ -1,4 +1,4 @@
-![screen](photo.png)
+![screen](srceenshots/photo.png)
 # tic-tac-toe-c
 
 This is my implementation of the game "Tic Tac Toe" in C.
